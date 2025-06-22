@@ -19,22 +19,22 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public ProdutoDTO salvar(ProdutoDTO produto) throws SQLException{
-        String sql = "INSERT INTO Produto (idProduto, marca, modelo, descricao, preco, quantidadeEstoque, idInstrumento, idFornecedor)" +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Produto (marca, modelo, descricao, preco, quantidadeEstoque, idInstrumento, idFornecedor)" +
+                "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (PreparedStatement stmt = conexao.prepareStatement (sql, Statement.RETURN_GENERATED_KEYS)) {
-            stmt.setLong(1, produto.getIdProduto());
-            stmt.setString(2, produto.getMarca());
-            stmt.setString(3, produto.getModelo());
-            stmt.setString(4, produto.getDescricao());
-            stmt.setDouble(5, produto.getPreco());
-            stmt.setInt(6, produto.getQuantidadeEstoque());
-            stmt.setLong(7, produto.getIdInstrumento());
+        try (PreparedStatement stmt = conexao.prepareStatement (sql, new String[]{"idproduto"})) {
+            stmt.setString(1, produto.getMarca());
+            stmt.setString(2, produto.getModelo());
+            stmt.setString(3, produto.getDescricao());
+            stmt.setDouble(4, produto.getPreco());
+            stmt.setInt(5, produto.getQuantidadeEstoque());
+            stmt.setLong(6, produto.getIdInstrumento());
             if (produto.getIdFornecedor() != null) {
-                stmt.setLong(8, produto.getIdFornecedor());
+                stmt.setLong(7, produto.getIdFornecedor());
             } else {
-                stmt.setNull(8, java.sql.Types.BIGINT);
+                stmt.setNull(7, java.sql.Types.BIGINT);
             }
+
 
             int affectedRows = stmt.executeUpdate();
 
@@ -55,21 +55,21 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public void atualizar(ProdutoDTO produto) throws SQLException{
-        String sql = "UPDATE Produto SET marca = ?, modelo = ?, descricao = ?, preco = ?, quantidadeEstoque = ?, idInstrumento = ?, idFornecedor = ? WHERE idProduto = ?, ";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        String sql = "UPDATE Produto SET marca = ?, modelo = ?, descricao = ?, preco = ?, quantidadeEstoque = ?, idInstrumento = ?, idFornecedor = ? WHERE idProduto = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, produto.getMarca());
             stmt.setString(2, produto.getModelo());
             stmt.setString(3, produto.getDescricao());
             stmt.setDouble(4, produto.getPreco());
             stmt.setInt(5, produto.getQuantidadeEstoque());
             stmt.setLong(6, produto.getIdInstrumento());
-            stmt.setLong(7, produto.getIdFornecedor());
-            stmt.setLong(8, produto.getIdProduto());
             if (produto.getIdFornecedor() != null) {
-                stmt.setLong(9, produto.getIdFornecedor());
+                stmt.setLong(7, produto.getIdFornecedor());
             } else {
-                stmt.setNull(9, java.sql.Types.BIGINT);
+                stmt.setNull(7, java.sql.Types.BIGINT);
             }
+            stmt.setLong(8, produto.getIdProduto());
+
             stmt.executeUpdate();
         }
     }
@@ -78,7 +78,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
     @Override
     public void remover(Long idProduto) throws SQLException{
         String sql = "DELETE FROM Produto WHERE idProduto = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, idProduto);
             stmt.executeUpdate();
         } catch (SQLException ex) {
@@ -108,7 +108,7 @@ public class ProdutoDAOImpl implements ProdutoDAO {
     @Override
     public Optional<ProdutoDTO> buscarPorId(Long idProduto) throws SQLException{
         String sql = "SELECT * FROM Produto WHERE idProduto = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)){
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             stmt.setLong(1, idProduto);
             try (ResultSet rs = stmt.executeQuery()){
                 if (rs.next()){

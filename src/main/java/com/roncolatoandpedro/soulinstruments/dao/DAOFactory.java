@@ -10,7 +10,7 @@ import java.sql.SQLException;
 public class DAOFactory {
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/SoulInstruments";
     private static final String DB_USER = "postgres";
-    private static final String DB_PASSWORD = "sua_senha_aqui";
+    private static final String DB_PASSWORD = "Eclesiastes1401";
 
     static {
         try {
@@ -18,16 +18,16 @@ public class DAOFactory {
         } catch (ClassNotFoundException e) {
             // Em uma aplicação Swing, um erro aqui é fatal e deve ser comunicado.
             // Lançar uma RuntimeException para parar a aplicação é uma abordagem válida.
-            throw new ExceptionInInitializerError("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.", e);
+            throw new ExceptionInInitializerError(new RuntimeException("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.", e));
         }
     }
     private static Connection getConexao() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 
-    // --- MÉTODOS FACTORY PARA CRIAR CADA DAO ---
-    public static FornecedorDAO CreateFornecedorDAO() throws Exception{
-        return new FornecedorDAOImpl(getConexao());
+    // --- MÉTODOS FACTORY PARA CRIAR CADA DAO ---.
+    public static InstrumentoDAO criarInstrumentoDAO() throws SQLException {
+        return new InstrumentoDAOImpl(getConexao());
     }
     public static ProdutoDAO criarProdutoDAO() throws SQLException {
         return new ProdutoDAOImpl(getConexao());

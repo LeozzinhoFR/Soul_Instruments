@@ -21,7 +21,7 @@ public class InstrumentoDTO {
         return idInstrumento;
     }
 
-    public void setIdInstrumento(Long id) {
+    public void setIdInstrumento(Long idInstrumento) {
         this.idInstrumento = idInstrumento;
     }
 

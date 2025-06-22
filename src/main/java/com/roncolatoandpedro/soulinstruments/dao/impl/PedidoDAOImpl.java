@@ -34,32 +34,33 @@ public class PedidoDAOImpl implements PedidoDAO {
         try {
             conexao.setAutoCommit(false); // Inicia a transação
 
-            // Antes de salvar o pedido mestre, precisamos dos preços dos produtos para os itens
-            // e para calcular o valor_total do pedido.
-            if (pedido.getItens() != null) {
+            // 1. Itera sobre os itens para buscar preços e calcular subtotais
+            if (pedido.getItens() != null && !pedido.getItens().isEmpty()) {
                 for (ItemPedidoDTO item : pedido.getItens()) {
-                    if (item.getValorUnitario() == 0 && item.getIdProduto() != null) { // Preço ainda não definido
-                        Optional<ProdutoDTO> produtoOpt = produtoDAO.buscarPorId(item.getIdProduto());
-                        if (produtoOpt.isPresent()) {
-                            item.setValorUnitario(produtoOpt.get().getPreco());
-                            item.calcularValorTotal(); // DTO calcula o valor do item
-                        } else {
-                            throw new SQLException("Produto com ID " + item.getIdProduto() + " não encontrado.");
-                        }
-                    }
+                    // Busca o produto correspondente para obter o preço atual
+                    ProdutoDTO produto = produtoDAO.buscarPorId(item.getIdProduto())
+                            .orElseThrow(() -> new SQLException("Produto com ID " + item.getIdProduto() + " não encontrado."));
+
+                    // Define o preço unitário no item
+                    item.setValorUnitario(produto.getPreco());
+                    // Calcula o valor total deste item (quantidade * preço)
+                    item.calcularValorTotal();
                 }
             }
-            pedido.calcularValorTotalPedido(); // DTO calcula o valor total do pedido
 
-            //Salvar o Pedido
-            try (PreparedStatement stmtPedido = conexao.prepareStatement(sqlPedido, Statement.RETURN_GENERATED_KEYS)) {
+            // 2. Com todos os itens já calculados, calcula o valor total do pedido
+            pedido.calcularValorTotalPedido();
+            // --- FIM DA CORREÇÃO DE LÓGICA ---
+
+            // 3. Salvar o registro mestre do Pedido
+            try (PreparedStatement stmtPedido = conexao.prepareStatement(sqlPedido, new String[]{"idpedido"})) {
                 stmtPedido.setDate(1, Date.valueOf(pedido.getDataPedido()));
                 if (pedido.getDataEntrega() != null) {
                     stmtPedido.setDate(2, Date.valueOf(pedido.getDataEntrega()));
                 } else {
                     stmtPedido.setNull(2, java.sql.Types.DATE);
                 }
-                stmtPedido.setDouble(3, pedido.getValorTotal()); // Agora o valor total está calculado
+                stmtPedido.setDouble(3, pedido.getValorTotal()); // Agora este valor NÃO é nulo
                 stmtPedido.setLong(4, pedido.getIdFornecedor());
 
                 int affectedRows = stmtPedido.executeUpdate();
@@ -67,8 +68,6 @@ public class PedidoDAOImpl implements PedidoDAO {
                     try (ResultSet generatedKeys = stmtPedido.getGeneratedKeys()) {
                         if (generatedKeys.next()) {
                             pedido.setIdPedido(generatedKeys.getLong(1));
-                        } else {
-                            throw new SQLException("Falha ao obter o ID gerado para o pedido.");
                         }
                     }
                 } else {
@@ -76,23 +75,22 @@ public class PedidoDAOImpl implements PedidoDAO {
                 }
             }
 
-            //Salvar os Itens do Pedido usando ItemPedidoDAO
+            // 4. Salvar os Itens do Pedido (agora com todos os dados preenchidos)
             if (pedido.getItens() != null && !pedido.getItens().isEmpty()) {
                 for (ItemPedidoDTO item : pedido.getItens()) {
-                    // O item já deve ter o precoUnitarioCompra e valorTotalItem calculados
-                    itemPedidoDAO.salvar(item, pedido.getIdPedido(), produtoDAO); // Passa o produtoDAO se o ItemPedidoDAO.salvar ainda precisar dele
-                    // (na nossa versão atual de ItemPedidoDAO.salvar, ele busca o preço)
+                    item.setIdPedido(pedido.getIdPedido()); // Garante que o ID do pedido está no item
+                    itemPedidoDAO.salvar(item); // Chama o novo método salvar que só precisa do item
                 }
             }
 
-            conexao.commit();
+            conexao.commit(); // Efetiva a transação
             return pedido;
 
         } catch (SQLException e) {
-            conexao.rollback();
+            conexao.rollback(); // Desfaz tudo em caso de erro
             throw e;
         } finally {
-            conexao.setAutoCommit(originalAutoCommit);
+            conexao.setAutoCommit(originalAutoCommit); // Restaura o estado da conexão
         }
     }
 
@@ -103,7 +101,7 @@ public class PedidoDAOImpl implements PedidoDAO {
         pedido.calcularValorTotalPedido();
 
         String sql = "UPDATE Pedido SET dataEntrega = ?, valorTotal = ? WHERE idPedido = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (pedido.getDataEntrega() != null) {
                 stmt.setDate(1, Date.valueOf(pedido.getDataEntrega()));
             } else {
@@ -116,32 +114,34 @@ public class PedidoDAOImpl implements PedidoDAO {
     }
 
     @Override
-    public void remover(Long idPedido, Long idItemPedido) throws SQLException {
-        String sqlItens = "DELETE FROM ItemPedido WHERE idItemPedido = ?";
-        String sqlPedido = "DELETE FROM Pedido WHERE idPedido = ?";
+    public void remover(Long idPedido) throws SQLException {
+        // CORREÇÃO 1: A query agora deleta na tabela ItemPedido ONDE a coluna idpedido corresponde ao parâmetro.
+        String sqlItens = "DELETE FROM ItemPedido WHERE idpedido = ?";
+        String sqlPedido = "DELETE FROM Pedido WHERE idpedido = ?";
 
         boolean originalAutoCommit = conexao.getAutoCommit();
         try {
-            conexao.setAutoCommit(false);
+            conexao.setAutoCommit(false); // Inicia a transação
 
+            // Passo 1: Primeiro, remove todos os itens filhos da tabela ItemPedido.
             try (PreparedStatement stmtItens = conexao.prepareStatement(sqlItens)) {
-                stmtItens.setLong(1, idItemPedido);
+                stmtItens.setLong(1, idPedido); // Usa o ID do pedido que queremos apagar
                 stmtItens.executeUpdate();
             }
 
+            // Passo 2: Agora que os filhos foram removidos, remove o pedido pai.
             try (PreparedStatement stmtPedido = conexao.prepareStatement(sqlPedido)) {
-                stmtPedido.setLong(1, idItemPedido);
-                int affectedRows = stmtPedido.executeUpdate();
-                if (affectedRows == 0) {
-                    throw new SQLException("Pedido com ID " + idPedido + " não encontrado para remoção.");
-                }
+                stmtPedido.setLong(1, idPedido); // Usa o ID do pedido que queremos apagar
+                stmtPedido.executeUpdate();
             }
-            conexao.commit();
+
+            conexao.commit(); // Se tudo deu certo, efetiva as remoções.
+
         } catch (SQLException e) {
-            conexao.rollback();
-            throw e;
+            conexao.rollback(); // Se algo deu errado, desfaz tudo.
+            throw new SQLException("Erro ao remover pedido e seus itens: " + e.getMessage(), e);
         } finally {
-            conexao.setAutoCommit(originalAutoCommit);
+            conexao.setAutoCommit(originalAutoCommit); // Restaura o estado da conexão.
         }
     }
 
@@ -162,7 +162,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     public Optional<PedidoDTO> buscarPorId(Long idPedido) throws SQLException {
         String sql = "SELECT * FROM Pedido WHERE idPedido = ?";
         PedidoDTO pedido = null;
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, idPedido);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -230,7 +230,7 @@ public class PedidoDAOImpl implements PedidoDAO {
     public List<PedidoDTO> listarPorFornecedor(Long idFornecedor) throws SQLException {
         List<PedidoDTO> pedidos = new ArrayList<>();
         String sql = "SELECT * FROM Pedido WHERE idFornecedor = ? ORDER BY dataPedido DESC";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, idFornecedor);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {

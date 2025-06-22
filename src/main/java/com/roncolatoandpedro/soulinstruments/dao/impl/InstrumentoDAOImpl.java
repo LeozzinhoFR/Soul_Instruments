@@ -18,7 +18,7 @@ public class InstrumentoDAOImpl implements InstrumentoDAO {
     }
 
     private InstrumentoDTO mapearResultSet(ResultSet rs) throws SQLException {
-        Long idInstrumento = rs.getLong("idInstrumento");
+        Long idInstrumento = rs.getLong("idinstrumento");
         String nome = rs.getString("nome");
         Categoria categoria = Categoria.valueOf(rs.getString("categoria"));
         return new InstrumentoDTO(idInstrumento, nome, categoria);

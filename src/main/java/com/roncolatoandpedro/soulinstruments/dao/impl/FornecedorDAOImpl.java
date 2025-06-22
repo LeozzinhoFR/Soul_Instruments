@@ -21,7 +21,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     public FornecedorDTO salvar(FornecedorDTO fornecedor) throws SQLException {
         String sql = "INSERT INTO Fornecedor (nomeFornecedor, cnpj, descricao) VALUES (?, ?, ?)";
 
-        try(PreparedStatement stmt = conexao.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS)){
+        try(PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)){
             stmt.setString(1, fornecedor.getNomeFornecedor());
             stmt.setString(2, fornecedor.getCnpj());
             stmt.setString(3, fornecedor.getDescricao());
@@ -46,7 +46,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     @Override
     public void atualizar(FornecedorDTO fornecedor) throws SQLException {
         String sql = "UPDATE Fornecedor SET nomeFornecedor = ?, cnpj = ?, descricao = ? WHERE idFornecedor = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, fornecedor.getNomeFornecedor());
             stmt.setString(2, fornecedor.getCnpj());
             stmt.setString(3, fornecedor.getDescricao());
@@ -61,7 +61,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
         // Pedro Adicionar lógica para verificar/tratar dependências (produtos, pedidos) antes de remover,
         // ou configurar o banco para ON DELETE CASCADE/SET NULL, se apropriado.
         String sql = "DELETE FROM Fornecedor WHERE idFornecedor = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setLong(1, idFornecedor);
             stmt.executeUpdate();
         }
@@ -80,7 +80,7 @@ public class FornecedorDAOImpl implements FornecedorDAO {
     @Override
     public Optional<FornecedorDTO> buscarPorId(Long idFornecedor) throws SQLException {
         String sql = "SELECT * FROM Fornecedor WHERE idFornecedor = ?";
-        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conexao.prepareStatement(sql, new String[]{"idfornecedor"})) {
             stmt.setLong(1, idFornecedor);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

@@ -19,7 +19,7 @@ public class FornecedorDTO {
         return idFornecedor;
     }
 
-    public void setIdFornecedor(Long id) {
+    public void setIdFornecedor(Long idFornecedor) {
         this.idFornecedor = idFornecedor;
     }
 
