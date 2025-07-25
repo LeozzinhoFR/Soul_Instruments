@@ -15,7 +15,7 @@ O Soul Instruments é uma aplicação Java desktop com interface gráfica constr
 
 | Tela de Produtos | Tela de Novo Pedido | Tela de Listagem de Pedidos |
 | :---: | :---: | :---: |
-| ![Tela de Produtos](https://i.imgur.com/URL_DA_SUA_IMAGEM_AQUI.png) | ![Tela de Novo Pedido](https://i.imgur.com/URL_DA_SUA_IMAGEM_AQUI.png) | ![Tela de Listagem de Pedidos](https://i.imgur.com/URL_DA_SUA_IMAGEM_AQUI.png) |
+| ![Tela de Produtos](https://github.com/user-attachments/assets/93c1d67a-7ebb-4406-be64-cabc906d35c3) | ![Tela de Novo Pedido](https://github.com/user-attachments/assets/b50d34a3-007f-46f3-bc01-8b3625af2d20) | ![Tela de Listagem de Pedidos](https://github.com/user-attachments/assets/128d66de-97f1-4425-a71f-1e5781ece08f) |
 
 ## Funcionalidades Principais
 
