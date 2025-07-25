@@ -13,4 +13,9 @@ public interface ProdutoDAO {
     void remover(Long idProduto) throws SQLException;
     Optional<ProdutoDTO> buscarPorId(Long idProduto) throws SQLException;
     List<ProdutoDTO> listarTodos() throws SQLException;
+    boolean existeProdutoPorFornecedor(Long idFornecedor) throws SQLException;
+    List<ProdutoDTO> listarPorFornecedor(Long idFornecedor) throws SQLException;
+    boolean existeProdutoPorInstrumento(Long idInstrumento) throws SQLException;
+
+
 }

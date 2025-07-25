@@ -9,6 +9,7 @@ public class PedidoDTO {
     private LocalDate dataPedido;
     private LocalDate dataEntrega;
     private Double valorTotal;
+    private StatusPedido status;
     private Long idFornecedor;
     private List<ItemPedidoDTO> itens;
 
@@ -53,6 +54,14 @@ public class PedidoDTO {
     public void setValorTotal(Double valorTotal) {
         this.valorTotal = valorTotal;
     }
+
+    public StatusPedido getStatus() {
+        return status;
+    }
+    public void setStatus(StatusPedido status) {
+        this.status = status;
+    }
+
     public Long getIdFornecedor() {
         return idFornecedor;
     }

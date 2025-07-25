@@ -11,6 +11,8 @@ public class ProdutoDTO {
     private int quantidadeEstoque;
     private Long idInstrumento;
     private Long idFornecedor;
+    private transient String nomeDoInstrumento;
+    private transient String nomeFornecedor;
 
     // Construtor padrão
     public ProdutoDTO() {
@@ -84,6 +86,13 @@ public class ProdutoDTO {
         this.idInstrumento = idInstrumento;
     }
 
+    public String getNomeDoInstrumento() {
+        return nomeDoInstrumento;
+    }
+    public void setNomeDoInstrumento(String nomeDoInstrumento) {
+        this.nomeDoInstrumento = nomeDoInstrumento;
+    }
+
     public Long getIdFornecedor() {
         return idFornecedor;
     }
@@ -91,4 +100,13 @@ public class ProdutoDTO {
     public void setIdFornecedor(Long idFornecedor) {
         this.idFornecedor = idFornecedor;
     }
+
+    public String getNomeFornecedor() {
+        return nomeFornecedor;
+    }
+    public void setNomeFornecedor(String nomeFornecedor) {
+        this.nomeFornecedor = nomeFornecedor;
+    }
+
+
 }

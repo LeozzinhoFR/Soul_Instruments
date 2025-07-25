@@ -90,19 +90,38 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
 
 
-    private ProdutoDTO mapearResultSetParaProdutoDTO(ResultSet resultSet) throws SQLException {
-        Long idProduto = resultSet.getLong("idProduto");
-        String marca = resultSet.getString("marca");
-        String modelo = resultSet.getString("modelo");
-        String descricao = resultSet.getString("descricao");
-        double preco = resultSet.getDouble("preco");
-        int quantidadeEstoque = resultSet.getInt("quantidadeEstoque");
-        Long idInstrumento = resultSet.getLong("idInstrumento");
-        Long idFornecedor = resultSet.getLong("idFornecedor");
-        if (resultSet.wasNull()) {
-            idFornecedor = null;
+    private ProdutoDTO mapearResultSetParaProdutoDTO(ResultSet rs) throws SQLException {
+        ProdutoDTO produto = new ProdutoDTO(
+                rs.getLong("idproduto"),
+                rs.getString("marca"),
+                rs.getString("modelo"),
+                rs.getString("descricao"),
+                rs.getDouble("preco"),
+                rs.getInt("quantidadeestoque"),
+                rs.getLong("idinstrumento"),
+                rs.getLong("idfornecedor")
+        );
+        // Verifica se as colunas do JOIN existem no ResultSet antes de tentar lê-las
+        // Isso torna o método de mapeamento mais flexível
+        if (hasColumn(rs, "nome_instrumento")) {
+            produto.setNomeDoInstrumento(rs.getString("nome_instrumento"));
         }
-        return new ProdutoDTO(idProduto, marca, modelo, descricao, preco, quantidadeEstoque, idInstrumento, idFornecedor);
+        if (hasColumn(rs, "nome_fornecedor")) {
+            produto.setNomeFornecedor(rs.getString("nome_fornecedor"));
+        }
+        return produto;
+    }
+
+    // Método auxiliar para verificar se uma coluna existe no ResultSet
+    private boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+        for (int x = 1; x <= columns; x++) {
+            if (columnName.equals(rsmd.getColumnName(x))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -121,13 +140,71 @@ public class ProdutoDAOImpl implements ProdutoDAO {
 
     @Override
     public List<ProdutoDTO> listarTodos() throws SQLException {
-        String sql = "SELECT * FROM Produto ORDER BY idInstrumento"; //aqui lista por idInstrumento - tipo de instrumento
         List<ProdutoDTO> produtos = new ArrayList<>();
-        try (Statement stmt = conexao.createStatement()){
-            ResultSet rs = stmt.executeQuery(sql);
-            while (rs.next())
-                produtos.add(mapearResultSetParaProdutoDTO(rs));
+        String sql = "SELECT p.*, i.nome as nome_instrumento, f.nomefornecedor as nome_fornecedor " +
+                "FROM produto p " +
+                "JOIN instrumento i ON p.idinstrumento = i.idinstrumento " +
+                "JOIN fornecedor f ON p.idfornecedor = f.idfornecedor " +
+                "ORDER BY i.nome, p.marca";
+        try (Statement stmt = conexao.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                ProdutoDTO produto = mapearResultSetParaProdutoDTO(rs); // Usando seu método de mapeamento existente
+                // Preenche os campos extras com os dados do JOIN
+                produto.setNomeDoInstrumento(rs.getString("nome_instrumento"));
+                produto.setNomeFornecedor(rs.getString("nome_fornecedor"));
+                produtos.add(produto);
             }
+        }
         return produtos;
         }
+
+    @Override
+    public boolean existeProdutoPorFornecedor(Long idFornecedor) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM produto WHERE idfornecedor = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, idFornecedor);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public List<ProdutoDTO> listarPorFornecedor(Long idFornecedor) throws SQLException {
+        List<ProdutoDTO> produtos = new ArrayList<>();
+        String sql = "SELECT p.*, i.nome as nome_instrumento " +
+                "FROM produto p " +
+                "JOIN instrumento i ON p.idinstrumento = i.idinstrumento " +
+                "WHERE p.idfornecedor = ? ORDER BY i.nome, p.marca";
+
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, idFornecedor);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    produtos.add(mapearResultSetParaProdutoDTO(rs));
+                }
+            }
+        }
+        return produtos;
+    }
+
+    @Override
+    public boolean existeProdutoPorInstrumento(Long idInstrumento) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM produto WHERE idinstrumento = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, idInstrumento);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+
 }

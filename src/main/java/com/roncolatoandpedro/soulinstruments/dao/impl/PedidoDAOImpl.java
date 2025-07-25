@@ -8,6 +8,7 @@ import com.roncolatoandpedro.soulinstruments.dto.PedidoDTO;
 import com.roncolatoandpedro.soulinstruments.dto.ProdutoDTO;
 
 
+
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -24,6 +25,16 @@ public class PedidoDAOImpl implements PedidoDAO {
         this.conexao = conexao;
         this.itemPedidoDAO = itemPedidoDAO;
         this.produtoDAO = produtoDAO;
+    }
+
+    @Override
+    public Connection getConexao() {
+        return this.conexao;
+    }
+
+    @Override
+    public ProdutoDAO getProdutoDAO() {
+        return this.produtoDAO;
     }
 
     @Override
@@ -155,6 +166,7 @@ public class PedidoDAOImpl implements PedidoDAO {
         }
         pedido.setIdFornecedor(rs.getLong("idFornecedor"));
         pedido.setValorTotal(rs.getDouble("valorTotal"));
+        String statusDoBanco = rs.getString("status");
         return pedido;
     }
 
@@ -243,4 +255,21 @@ public class PedidoDAOImpl implements PedidoDAO {
         }
         return pedidos;
     }
+
+
+    @Override
+    public boolean existeItemComProduto(Long idProduto) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM itempedido WHERE idproduto = ?";
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setLong(1, idProduto);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+
 }

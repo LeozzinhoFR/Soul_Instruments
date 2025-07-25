@@ -119,5 +119,25 @@ public class FornecedorDAOImpl implements FornecedorDAO {
         return fornecedores;
     }
 
+    @Override
+    public List<FornecedorDTO> buscarPorNomeOuCnpj(String termo) throws SQLException {
+        List<FornecedorDTO> fornecedores = new ArrayList<>();
+        // A query usa ILIKE para uma busca case-insensitive e '%' como coringa.
+        String sql = "SELECT * FROM fornecedor WHERE nomefornecedor ILIKE ? OR cnpj LIKE ?";
+
+        try (PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            String termoBusca = "%" + termo + "%";
+            stmt.setString(1, termoBusca);
+            stmt.setString(2, termoBusca); // CORREÇÃO: Adicionada a definição do segundo parâmetro
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    fornecedores.add(mapearResultSetParaFornecedorDTO(rs));
+                }
+            }
+        }
+        return fornecedores;
+    }
+
 
 }

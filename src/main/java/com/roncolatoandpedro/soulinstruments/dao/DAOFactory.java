@@ -21,7 +21,7 @@ public class DAOFactory {
             throw new ExceptionInInitializerError(new RuntimeException("Driver PostgreSQL JDBC não encontrado. Verifique o classpath.", e));
         }
     }
-    private static Connection getConexao() throws SQLException {
+    public static Connection getConexao() throws SQLException {
         return DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
     }
 

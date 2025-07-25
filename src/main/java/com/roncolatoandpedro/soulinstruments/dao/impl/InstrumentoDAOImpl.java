@@ -81,7 +81,7 @@ public class InstrumentoDAOImpl implements InstrumentoDAO {
     @Override
     public List<InstrumentoDTO> listarTodos() throws SQLException {
         List<InstrumentoDTO> instrumentos = new ArrayList<>();
-        String sql = "SELECT * FROM Instrumento ORDER BY nome";
+        String sql = "SELECT * FROM instrumento ORDER BY idinstrumento";
         try (Statement stmt = conexao.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
